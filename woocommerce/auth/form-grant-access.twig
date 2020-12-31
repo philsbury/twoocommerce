@@ -11,7 +11,7 @@
  #
  # @see https://docs.woocommerce.com/document/template-structure/
  # @package WooCommerce/Templates/Auth
- # @version 2.4.0
+ # @version 4.3.0
  #}
 
 {% do action( 'woocommerce_auth_page_header' ) %}
@@ -40,6 +40,7 @@
 		{# Translators: %s display name. #}
 		{{ __('Logged in as %s', 'woocommerce')|format(user.display_name) }}
 		<a href="{{ wc.logout_url }}" class="wc-auth-logout">{{ __('Logout', 'woocommerce') }}</a>
+  </p>
 </div>
 
 <p class="wc-auth-actions">

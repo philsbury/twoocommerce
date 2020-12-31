@@ -11,7 +11,7 @@
  #
  # @see     https://docs.woocommerce.com/document/template-structure/
  # @package WooCommerce\Templates
- # @version 3.7.0
+ # @version 4.6.0
  #}
 
 {% set order = fn('wc_get_order', wc.order_id ) %}
@@ -91,7 +91,7 @@
     {% do action( 'woocommerce_order_details_after_order_table', order ) %}
   </section>
 
-
+  {% do action( 'woocommerce_after_order_details', order ) %}
   {% if show_customer_details %}
     {% do fn('wc_get_template', 'order/order-details-customer.php', { 'order' : order }) %}
   {% endif %}
