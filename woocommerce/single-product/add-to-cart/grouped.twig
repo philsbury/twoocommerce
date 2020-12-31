@@ -1,0 +1,103 @@
+{##
+ # Grouped product add to cart
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/single-product/add-to-cart/grouped.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce/Templates
+ # @version 4.0.0
+ #}
+
+{% do action( 'woocommerce_before_add_to_cart_form' ) %}
+
+<form class="cart grouped_form" action="{{ product.get_permalink()|apply_filters('woocommerce_add_to_cart_form_action') }}" method="post" enctype='multipart/form-data'>
+	<table cellspacing="0" class="woocommerce-grouped-product-list group_table">
+		<tbody>
+
+      {% set quantites_required = wc.quantites_required %}
+			{% set previous_post = post %}
+
+      {% set grouped_product_columns = ['quantity', 'label', 'price']|apply_filters('woocommerce_grouped_product_columns', product) %}
+
+			{% do action( 'woocommerce_grouped_product_list_before', grouped_product_columns, quantites_required, product ) %}
+
+			{% for grouped_product_child in wc.grouped_products %}
+
+				{% set quantites_required = quantites_required or grouped_product_child.product.is_purchasable() and not grouped_product_child.product.has_options() %}
+
+
+				<tr id="product-{{ grouped_product_child.product.get_id() }}" class="woocommerce-grouped-product-list-item {{ fn('wc_get_product_class', '', grouped_product_child)|join(' ') }}">
+
+				{# // Output columns for each product. #}
+				{% for column_id in grouped_product_columns %}
+					{% do action('woocommerce_grouped_product_list_before_' ~ column_id, grouped_product_child) %}
+
+          {% if column_id == 'quantity' %}
+            {% do fn('ob_start') %}
+
+            {% if not grouped_product_child.product.is_purchasable() or grouped_product_child.product.has_options() or not grouped_product_child.product.is_in_stock() %}
+              {{ fn('woocommerce_template_loop_add_to_cart') }}
+            {% elseif grouped_product_child.product.is_sold_individually() %}
+              <input type="checkbox" name="quantity[{{ grouped_product_child.product.get_id()}}]" value="1" class="wc-grouped-product-add-to-cart-checkbox" />';
+            {% else %}
+
+              {% do action( 'woocommerce_before_add_to_cart_quantity' ) %}
+
+              {{ fn('woocommerce_quantity_input', {
+                  'input_name': 'quantity[' ~ grouped_product_child.product.get_id() ~ ']',
+                  'input_value': request.post.quantity[grouped_product_child.product.get_id()] ? fn('wc_stock_amount', fn('wc_clean', fn('wp_unslash', request.post.quantity[grouped_product_child.product.get_id()]))) : '',
+                  'min_value': 0|apply_filters('woocommerce_quantity_input_min', grouped_product_child),
+                  'max_value': grouped_product_child.product.get_max_purchase_quantity()|apply_filters( 'woocommerce_quantity_input_max', grouped_product_child),
+                  'placeholder': '0',
+                }
+              ) }}
+
+              {% do action( 'woocommerce_after_add_to_cart_quantity' ) %}
+            {% endif %}
+
+            {% set value = fn('ob_get_clean') %}
+          {% elseif column_id == 'label' %}
+            {% set value = '<label for="product-{{ grouped_product_child.get_id() }}">' %}
+            {% set value = value ~ grouped_product_child.product.is_visible() ? '<a href="' ~ grouped_product_child.product.get_permalink()|apply_filters('woocommerce_grouped_product_list_link', grouped_product_child.product.get_id()) ~ '">' ~ grouped_product_child.title ~ '</a>' : grouped_product_child.title %}
+            {% set value = value ~ '</label>' %}
+          {% elseif column_id == 'price' %}
+            {% set value = grouped_product_child.product.get_price_html() ~ fn('wc_get_stock_html', grouped_product_child) %}
+          {% else %}
+            {% set value = '' %}
+          {% endif %}
+
+					<td class="woocommerce-grouped-product-list-item__{{ column_id }}">{{ value|apply_filters('woocommerce_grouped_product_list_column_' ~ column_id, grouped_product_child) }}</td>
+
+					{% do action( 'woocommerce_grouped_product_list_after_' ~ column_id, grouped_product_child ) %}
+				{% endfor %}
+
+			</tr>
+			{% endfor %}
+			{# {post = $previous_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			setup_postdata( $post ); #}
+
+			{% do action( 'woocommerce_grouped_product_list_after', grouped_product_columns, quantites_required, product) %}
+
+		</tbody>
+	</table>
+
+	<input type="hidden" name="add-to-cart" value="{{ product.get_id() }}" />
+
+	{% if quantites_required %}
+
+		{% do action( 'woocommerce_before_add_to_cart_button' ) %}
+
+		<button type="submit" class="single_add_to_cart_button button alt">{{ product.single_add_to_cart_text() }}</button>
+
+		{% do action( 'woocommerce_after_add_to_cart_button' ) %}
+
+	{% endif %}
+</form>
+
+{% do action( 'woocommerce_after_add_to_cart_form' ) %}

@@ -1,0 +1,53 @@
+{##
+ # Edit address form
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/myaccount/form-edit-address.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.6.0
+ #}
+
+{% set page_title = 'billing' == wc.load_address ? __( 'Billing address', 'woocommerce')|e('html') : __( 'Shipping address', 'woocommerce' )|e('html') %}
+
+{% do action('woocommerce_before_edit_account_address_form') %}
+
+{% if not wc.load_address %}
+	{% do fn('wc_get_template', 'myaccount/my-address.php') %}
+{% else %}
+
+	<form method="post">
+
+		<h3>{{ page_title|apply_filters( 'woocommerce_my_account_edit_address_title', wc.load_address) }}</h3>
+
+		<div class="woocommerce-address-fields">
+			{% do action( "woocommerce_before_edit_address_form_" ~ wc.load_address) %}
+
+			<div class="woocommerce-address-fields__field-wrapper">
+
+				{% for key,field in wc.address %}
+					{% do fn('woocommerce_form_field', key, field, fn('wc_get_post_data_by_key', key, field.value)) %}
+				{% endfor %}
+
+			</div>
+
+			{% do action("woocommerce_after_edit_address_form_" ~ wc.load_address) %}
+
+			<p>
+				<button type="submit" class="button" name="save_address" value="{{ __('Save address', 'woocommerce' )|e('html_attr') }}">{{ __( 'Save address', 'woocommerce' )|e('html') }}</button>
+				{% do fn('wp_nonce_field', 'woocommerce-edit_address', 'woocommerce-edit-address-nonce' ) %}
+				<input type="hidden" name="action" value="edit_address" />
+			</p>
+		</div>
+
+	</form>
+
+{% endif %}
+
+{% do action( 'woocommerce_after_edit_account_address_form' ) %}

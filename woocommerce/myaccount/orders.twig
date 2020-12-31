@@ -1,0 +1,95 @@
+{##
+ # Orders
+ #
+ # Shows orders on the account page.
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/myaccount/orders.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.7.0
+ #}
+
+{% do action( 'woocommerce_before_account_orders', wc.has_orders ) %}
+
+{% if ( wc.has_orders ) %}
+
+	<table class="woocommerce-orders-table woocommerce-MyAccount-orders shop_table shop_table_responsive my_account_orders account-orders-table">
+		<thead>
+			<tr>
+				{% for column_id,column_name in fn('wc_get_account_orders_columns') %}
+					<th class="woocommerce-orders-table__header woocommerce-orders-table__header-{{ column_id|e('html_attr') }}"><span class="nobr">{{ column_name|e('html') }}</span></th>
+				{% endfor %}
+			</tr>
+		</thead>
+
+		<tbody>
+			{% for customer_order in wc.customer_orders.orders %}
+				{% set order = fn('wc_get_order', customer_order) %}
+				{% set item_count = order.get_item_count() - order.get_item_count_refunded() %}
+
+				<tr class="woocommerce-orders-table__row woocommerce-orders-table__row--status-{{ order.get_status()|e('html_attr') }} order">
+					{% for column_id,column_name in fn('wc_get_account_orders_columns') %}
+						<td class="woocommerce-orders-table__cell woocommerce-orders-table__cell-{{ column_id|e('html_attr') }}" data-title="{{ column_name|e('html_attr') }}">
+							{% if fn('has_action', 'woocommerce_my_account_my_orders_column_' ~ column_id) %}
+								{% do action( 'woocommerce_my_account_my_orders_column_' ~ column_id, order ) %}
+
+							{% elseif 'order-number' == column_id %}
+								<a href="{{ order.get_view_order_url()|e('esc_url') }}">
+									{{ (_x('#', 'hash before order number', 'woocommerce') ~ order.get_order_number())|e('esc_html') }}
+								</a>
+
+							{% elseif ( 'order-date' == column_id ) %}
+								<time datetime="{{ order.get_date_created().date('c')|e('html_attr') }}">{{ fn('wc_format_datetime', order.get_date_created())|e('html') }}</time>
+
+							{% elseif ( 'order-status' == column_id ) %}
+								{{ fn('wc_get_order_status_name', order.get_status())|e('html') }}
+
+							{% elseif ( 'order-total' == column_id ) %}
+								{# translators: 1: formatted order total 2: total order items #}
+                {% set message = _n( '%1$s for %2$s item', '%1$s for %2$s items', item_count, 'woocommerce' )|format(order.get_formatted_order_total(), item_count) %}
+								{{ fn('wp_kses_post', message) }}
+							{% elseif ( 'order-actions' == column_id ) %}
+								{% set actions = fn('wc_get_account_orders_actions', order) %}
+
+								{% if actions %}
+									{% for key,action in actions %}
+										<a href="{{ action.url|e('esc_url') }}" class="woocommerce-button button {{ key|e('html_attr') }}">{{ action.name|e('html') }}</a>
+									{% endfor %}
+								{% endif %}
+							{% endif %}
+						</td>
+					{% endfor %}
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	{% do action( 'woocommerce_before_account_orders_pagination' ) %}
+
+	{% if 1 < customer_orders.max_num_pages %}
+		<div class="woocommerce-pagination woocommerce-pagination--without-numbers woocommerce-Pagination">
+			{% if 1 != wc.current_page %}
+				<a class="woocommerce-button woocommerce-button--previous woocommerce-Button woocommerce-Button--previous button" href="{{ fn('wc_get_endpoint_url', 'orders', current_page - 1)|e('esc_url') }}">{{ __( 'Previous', 'woocommerce' )|e('html') }}</a>
+			{% endif %}
+
+			{% if customer_orders.max_num_pages|abs != wc.current_page %}
+				<a class="woocommerce-button woocommerce-button--next woocommerce-Button woocommerce-Button--next button" href="{{ fn('wc_get_endpoint_url', 'orders', current_page + 1)|e('esc_url') }}">{{ __( 'Next', 'woocommerce' )|e('html') }}</a>
+			{% endif %}
+		</div>
+	{% endif %}
+
+{% else %}
+	<div class="woocommerce-message woocommerce-message--info woocommerce-Message woocommerce-Message--info woocommerce-info">
+		<a class="woocommerce-Button button" href="{{ fn('wc_get_page_permalink', 'shop')|apply_filters('woocommerce_return_to_shop_redirect')|e('esc_url') }}">{{ __( 'Browse products', 'woocommerce' )|e('html')}}</a>
+		{{ __( 'No order has been made yet.', 'woocommerce' )|e('html') }}
+	</div>
+{% endif %}
+
+{% do action('woocommerce_after_account_orders', wc.has_orders ) %}

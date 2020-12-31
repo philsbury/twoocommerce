@@ -1,0 +1,106 @@
+{##
+ # Review order table
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/checkout/review-order.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.8.0
+ #}
+
+<table class="shop_table woocommerce-checkout-review-order-table">
+	<thead>
+		<tr>
+			<th class="product-name">{{ __( 'Product', 'woocommerce' ) }}</th>
+			<th class="product-total">{{ __( 'Subtotal', 'woocommerce' ) }}</th>
+		</tr>
+	</thead>
+	<tbody>
+
+		{% do action('woocommerce_review_order_before_cart_contents') %}
+
+		{% for cart_item_key,cart_item in cart.get_cart() %}
+			{% set _product = cart_item.data|apply_filters('woocommerce_cart_item_product', cart_item, cart_item_key ) %}
+
+			{% if _product and _product.exists() and cart_item.quantity > 0 and true|apply_filters( 'woocommerce_checkout_cart_item_visible', cart_item, cart_item_key) %}
+
+				<tr class="{{ 'cart_item'|apply_filters( 'woocommerce_cart_item_class', cart_item, cart_item_key) }}">
+					<td class="product-name">
+						{{ _product.get_name()|apply_filters( 'woocommerce_cart_item_name', cart_item, cart_item_key) }}&nbsp;
+						{{  ' <strong class="product-quantity">' ~ '&times;&nbsp;%s'|format(cart_item.quantity ) ~ '</strong>'|apply_filters( 'woocommerce_checkout_cart_item_quantity', cart_item, cart_item_key) }}
+						{{ fn('wc_get_formatted_cart_item_data', cart_item) }}
+					</td>
+					<td class="product-total">
+						{{ cart.get_product_subtotal( _product, cart_item.quantity )|apply_filters( 'woocommerce_cart_item_subtotal', cart_item, cart_item_key ) }}
+					</td>
+				</tr>
+			{% endif %}
+		{% endfor %}
+
+		{% do action('woocommerce_review_order_after_cart_contents') %}
+
+	</tbody>
+	<tfoot>
+
+		<tr class="cart-subtotal">
+			<th>{{ __( 'Subtotal', 'woocommerce' ) }}</th>
+			<td>{% do fn('wc_cart_totals_subtotal_html') %}</td>
+		</tr>
+
+		{% for code,coupon in cart.get_coupons() %}
+			<tr class="cart-discount coupon-{{ code|slugify }}">
+				<th>{% do fn('wc_cart_totals_coupon_label', coupon) %}</th>
+				<td>{% do fn('wc_cart_totals_coupon_html', coupon) %}</td>
+			</tr>
+		{% endfor %}
+
+		{% if cart.needs_shipping() and cart.show_shipping() %}
+
+			{% do action('woocommerce_review_order_before_shipping') %}
+
+			{% do fn('wc_cart_totals_shipping_html') %}
+
+			{% do action('woocommerce_review_order_after_shipping') %}
+
+		{% endif %}
+
+		{% for fee in cart.get_fees() %}
+			<tr class="fee">
+				<th>{{ fee.name }}</th>
+				<td>{% do fn('wc_cart_totals_fee_html', fee) %}</td>
+			</tr>
+		{% endfor %}
+
+		{% if fn('wc_tax_enabled') and not cart.display_prices_including_tax() %}
+			{% if 'itemized' == fn('get_option', 'woocommerce_tax_total_display') %}
+				{% for code,tax in cart.get_tax_totals() %}
+					<tr class="tax-rate tax-rate-{{ code|slugify }}">
+						<th>{{ tax.label }}</th>
+						<td>{{ tax.formatted_amount|e('wp_kses_post') }}</td>
+					</tr>
+				{% endfor %}
+			{% else %}
+				<tr class="tax-total">
+					<th>{{ countries.tax_or_vat() }}</th>
+					<td>{% do fn('wc_cart_totals_taxes_total_html') %}</td>
+				</tr>
+			{% endif %}
+		{% endif %}
+
+		{% do action( 'woocommerce_review_order_before_order_total' ) %}
+
+		<tr class="order-total">
+			<th>{{ __( 'Total', 'woocommerce' )|e }}</th>
+			<td>{% do fn('wc_cart_totals_order_total_html') %}</td>
+		</tr>
+
+		{% do action( 'woocommerce_review_order_after_order_total' ) %}
+
+	</tfoot>
+</table>

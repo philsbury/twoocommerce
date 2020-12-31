@@ -1,0 +1,36 @@
+{##
+ # The template for displaying product price filter widget.
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/content-widget-price-filter.php
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.7.1
+ #}
+
+{% do action('woocommerce_widget_price_filter_start', wc ) %}
+
+<form method="get" action="{{ wc.form_action|e('esc_url') }}">
+	<div class="price_slider_wrapper">
+		<div class="price_slider" style="display:none;"></div>
+		<div class="price_slider_amount" data-step="{{ wc.step|e('html_attr') }}">
+			<input type="text" id="min_price" name="min_price" value="{{ wc.current_min_price|e('html_attr') }}" data-min="{{ wc.min_price|e('html_attr') }}" placeholder="{{ __('Min price', 'woocommerce' )|e('html_attr') }}" />
+			<input type="text" id="max_price" name="max_price" value="{{ wc.current_max_price|e('html_attr') }}" data-max="{{ wc.max_price|e('html_attr') }}" placeholder="{{ __('Max price', 'woocommerce' )|e('html_attr') }}" />
+			{# translators: Filter: verb "to filter" #}
+			<button type="submit" class="button">{{ __( 'Filter', 'woocommerce' ) }}</button>
+			<div class="price_label" style="display:none;">
+				{{ __( 'Price:', 'woocommerce' ) }} <span class="from"></span> &mdash; <span class="to"></span>
+			</div>
+			{{ fn('wc_query_string_form_fields', null, ['min_price', 'max_price', 'paged'], '', true) }}
+			<div class="clear"></div>
+		</div>
+	</div>
+</form>
+
+{% do action( 'woocommerce_widget_price_filter_end', wc ) %}

@@ -1,0 +1,61 @@
+{##
+ # Order Downloads.
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/order/order-downloads.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.3.0
+ #}
+
+<section class="woocommerce-order-downloads">
+	{% if wc.show_title %}
+		<h2 class="woocommerce-order-downloads__title">{{ __( 'Downloads', 'woocommerce' )|e('html') }}</h2>
+	{% endif %}
+
+	<table class="woocommerce-table woocommerce-table--order-downloads shop_table shop_table_responsive order_details">
+		<thead>
+			<tr>
+				{% for column_id,column_name in fn('wc_get_account_downloads_columns') %}
+				<th class="{{ column_id|e('html_attr') }}"><span class="nobr">{{ column_name|e('html') }}</span></th>
+				{% endfor %}
+			</tr>
+		</thead>
+
+		{% for download in wc.downloads %}
+			<tr>
+				{% for column_id,column_name in fn('wc_get_account_downloads_columns') %}
+					<td class="{{ column_id|e('html_attr') }}" data-title="{{ column_name|e('html_attr') }}">
+						{% if fn('has_action', 'woocommerce_account_downloads_column_' ~ column_id) %}
+							{% do action('woocommerce_account_downloads_column_' ~ column_id, download ) %}
+						{% else %}
+              {% if column_id == 'download-product' %}
+                {% if download.product_url %}
+                  <a href="{{ download.product_url|e('esc_url') }}">{{ download.product_name|e('html') }}</a>
+                {% else %}
+                  {{ download.product_name|e('html') }}
+                {% endif %}
+              {% elseif column_id == 'download-file' %}
+                <a href="{{ download.download_url|e('esc_url') }}" class="woocommerce-MyAccount-downloads-file button alt">{{ download.download_name|e('html') }}</a>
+              {% elseif column_id == 'download-remaining' %}
+                {{ fn('is_numeric', download.downloads_remaining) ? download.downloads_remaining|e('html') : __( '&infin;', 'woocommerce' ) }}
+              {% elseif column_id == 'download-expires' %}
+                {% if download.access_expires %}
+                  <time datetime="{{ fn('date', 'Y-m-d', fn('strtotime', download.access_expires))|e('html_attr') }}" title="{{ fn('strtotime'. download.access_expires)|e('html_attr') }}">{{ fn('date_i18n', fn('get_option', 'date_format' ), fn('strtotime', download.access_expires)) }}</time>
+                {% else %}
+                  {{ __( 'Never', 'woocommerce' ) }}
+                {% endif %}
+              {% endif %}
+						{% endif %}
+					</td>
+				{% endfor %}
+			</tr>
+		{% endfor %}
+	</table>
+</section>

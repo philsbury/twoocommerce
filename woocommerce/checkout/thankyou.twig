@@ -1,0 +1,82 @@
+{##
+ # Thankyou page
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/checkout/thankyou.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.7.0
+ #}
+
+<div class="woocommerce-order">
+	{% if wc.order %}
+
+		{% do action('woocommerce_before_thankyou', wc.order.get_id()) %}
+
+		{% if wc.order.has_status( 'failed' ) %}
+
+			<p class="woocommerce-notice woocommerce-notice--error woocommerce-thankyou-order-failed">{{ __( 'Unfortunately your order cannot be processed as the originating bank/merchant has declined your transaction. Please attempt your purchase again.', 'woocommerce' ) }}</p>
+
+			<p class="woocommerce-notice woocommerce-notice--error woocommerce-thankyou-order-failed-actions">
+				<a href="{{ wc.order.get_checkout_payment_url() }}" class="button pay">{{ __('Pay', 'woocommerce' ) }}</a>
+				{% if user %}
+					<a href="{{ fn('wc_get_page_permalink', 'myaccount') }}" class="button pay">{{ __( 'My account', 'woocommerce' ) }}</a>
+				{% endif %}
+			</p>
+		{% else %}
+
+			<p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received">{{ __( 'Thank you. Your order has been received.', 'woocommerce' )|apply_filters( 'woocommerce_thankyou_order_received_text', wc.order ) }}</p>
+
+			<ul class="woocommerce-order-overview woocommerce-thankyou-order-details order_details">
+
+				<li class="woocommerce-order-overview__order order">
+					{{ __( 'Order number:', 'woocommerce' ) }}
+					<strong>{{ wc.order.get_order_number() }}</strong>
+				</li>
+
+				<li class="woocommerce-order-overview__date date">
+					{{ __( 'Date:', 'woocommerce' ) }}
+					<strong>{{ fn('wc_format_datetime', wc.order.get_date_created()) }}</strong>
+				</li>
+
+				{% if user and wc.order.get_user_id() == user.id and wc.order.get_billing_email() %}
+					<li class="woocommerce-order-overview__email email">
+						{{ __( 'Email:', 'woocommerce' ) }}
+						<strong>{{ wc.order.get_billing_email() }}</strong>
+					</li>
+				{% endif %}
+
+				<li class="woocommerce-order-overview__total total">
+					{{ __( 'Total:', 'woocommerce' ) }}
+					<strong>{{ wc.order.get_formatted_order_total() }}</strong>
+				</li>
+
+				{% if wc.order.get_payment_method_title() %}
+					<li class="woocommerce-order-overview__payment-method method">
+						{{ __( 'Payment method:', 'woocommerce' ) }}
+						<strong>{{ wc.order.get_payment_method_title()|e('wp_kses_post') }}</strong>
+					</li>
+				{% endif %}
+
+			</ul>
+
+		{% endif %}
+
+		{% do action( 'woocommerce_thankyou_' ~ wc.order.get_payment_method(), wc.order.get_id() ) %}
+		{% do action( 'woocommerce_thankyou', wc.order.get_id() ) %}
+
+	{% else %}
+
+		<p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received">
+      {{ __( 'Thank you. Your order has been received.', 'woocommerce' )|apply_filters( 'woocommerce_thankyou_order_received_text', null) }}
+    </p>
+
+	{% endif %}
+
+</div>

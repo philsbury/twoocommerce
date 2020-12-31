@@ -1,0 +1,80 @@
+{##
+ # Shipping Methods Display
+ #
+ # In 2.1 we show methods per package. This allows for multiple methods per order if so desired.
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/cart/cart-shipping.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.6.0
+ #}
+
+
+{% set formatted_destination = wc.formatted_destination ? wc.formatted_destination : countries.get_formatted_address(wc.package.destination, ', ' ) %}
+{% set has_calculated_shipping = wc.has_calculated_shipping is not empty %}
+{% set show_shipping_calculator = wc.show_shipping_calculator %}
+{% set calculator_text = '' %}
+
+<tr class="woocommerce-shipping-totals shipping">
+	<th>{{ wc.package_name|e('wp_kses_post') }}</th>
+	<td data-title="{{ wc.package_name|e('html_attr') }}">
+		{% if wc.available_methods %}
+			<ul id="shipping_method" class="woocommerce-shipping-methods">
+				{% for method in wc.available_methods %}
+					<li>
+						{% if 1 < wc.available_methods|length %}
+							{% set input = '<input type="radio" name="shipping_method[%1$d]" data-index="%1$d" id="shipping_method_%1$d_%2$s" value="%3$s" class="shipping_method" %4$s />' %}
+              {{ input|format(wc.index, method.id|slugify, method.id|e('html_attr'), fn('checked', method.id, wc.chosen_method, false)) }}
+						{% else %}
+							{% set input = '<input type="hidden" name="shipping_method[%1$d]" data-index="%1$d" id="shipping_method_%1$d_%2$s" value="%3$s" class="shipping_method" />' %}
+              {{ input|format(wc.index, method.id|slugify, method.id|e('html_attr')) }}
+						{% endif %}
+						{{ '<label for="shipping_method_%1$s_%2$s">%3$s</label>'|format(wc.index, method.id|slugify, fn('wc_cart_totals_shipping_method_label', method)) }}
+						{% do action( 'woocommerce_after_shipping_rate', method, wc.index ) %}
+
+					</li>
+				{% endfor %}
+			</ul>
+			{% if fn('is_cart') %}
+				<p class="woocommerce-shipping-destination">
+					{% if wc.formatted_destination %}
+						{# Translators: $s shipping destination. #}
+            {{ __('Shipping to %s.', 'woocommerce')|format('<strong>' ~ wc.formatted_destination ~ '</strong>') }}
+						{% set calculator_text = __( 'Change address', 'woocommerce' ) %}
+					{% else %}
+            {{ __( 'Shipping options will be updated during checkout.', 'woocommerce' )|apply_filters('woocommerce_shipping_estimate_html') }}
+						{# echo wp_kses_post( apply_filters( 'woocommerce_shipping_estimate_html', __( 'Shipping options will be updated during checkout.', 'woocommerce' ) ) ); #}
+					{% endif %}
+				</p>
+			{% endif %}
+
+		{% elseif not wc.has_calculated_shipping or not wc.formatted_destination %}
+			{% if fn('is_cart') and 'no' == fn('get_option', 'woocommerce_enable_shipping_calc' ) %}
+				{{ __( 'Shipping costs are calculated during checkout.', 'woocommerce' )|apply_filters( 'woocommerce_shipping_not_enabled_on_cart_html') }}
+			{% else %}
+				{{ __( 'Enter your address to view shipping options.', 'woocommerce' )|apply_filters( 'woocommerce_shipping_may_be_available_html') }}
+			{% endif %}
+		{% elseif not fn('is_cart') %}
+			{{ __( 'There are no shipping options available. Please ensure that your address has been entered correctly, or contact us if you need any help.', 'woocommerce' )|apply_filters( 'woocommerce_no_shipping_available_html') }}
+		{% else %}
+			{# Translators: $s shipping destination. #}
+      {{ __( 'No shipping options were found for %s.', 'woocommerce' )|format('<strong>' ~ wc.formatted_destination ~ '</strong>') }}
+			{% set calculator_text = __( 'Enter a different address', 'woocommerce' ) %}
+		{% endif %}
+
+		{% if wc.show_package_details %}
+			<p class="woocommerce-shipping-contents"><small>{{ wc.package_details }}</small></p>
+		{% endif %}
+
+		{% if wc.show_shipping_calculator %}
+			{{ fn('woocommerce_shipping_calculator', calculator_text) }}
+		{% endif %}
+	</td>
+</tr>

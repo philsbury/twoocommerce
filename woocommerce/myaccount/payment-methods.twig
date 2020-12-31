@@ -1,0 +1,75 @@
+{##
+ # Payment methods
+ #
+ # Shows customer payment methods on the account page.
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/myaccount/payment-methods.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 2.6.0
+ #}
+
+
+{% set saved_methods = fn('wc_get_customer_saved_methods_list', user.id) %}
+{% set has_methods   = saved_methods|length|abs %}
+{% set types         = fn('wc_get_account_payment_methods_types') %}
+
+{% do action( 'woocommerce_before_account_payment_methods', has_methods ) %}
+
+{% if has_methods %}
+
+	<table class="woocommerce-MyAccount-paymentMethods shop_table shop_table_responsive account-payment-methods-table">
+		<thead>
+			<tr>
+				{% for column_id, column_name in fn('wc_get_account_payment_methods_columns') %}
+					<th class="woocommerce-PaymentMethod woocommerce-PaymentMethod--{{ column_id|e('html_attr') }} payment-method-{{ column_id|e('html_attr') }}"><span class="nobr">{{ column_name }}</span></th>
+				{% endfor %}
+			</tr>
+		</thead>
+		{% for type,methods in saved_methods %}
+			{% for method in methods %}
+				<tr class="payment-method{{ method.is_default is not empty ? ' default-payment-method' }}">
+					{% for column_id,column_name in fn('wc_get_account_payment_methods_columns') %}
+						<td class="woocommerce-PaymentMethod woocommerce-PaymentMethod--{{ column_id|e('html_attr') }} payment-method-{{ column_id|e('html_attr') }}" data-title="{{ column_name|e('html_attr') }}">
+
+							{% if fn('has_action', 'woocommerce_account_payment_methods_column_' ~ column_id) %}
+								{% do action( 'woocommerce_account_payment_methods_column_' ~ column_id, method ) %}
+							{% elseif 'method' == column_id %}
+								{% if method.method.last4 %}
+									{# translators: 1: credit card type 2: last 4 digits #}
+                  {{ __('%1$s ending in %2$s', 'woocommerce')|e('html')|format(fn('wc_get_credit_card_type_label', method.method.brand)|e('html'), method.method.last4|e('html')) }}
+								{% else %}
+									{{ fn('wc_get_credit_card_type_label', method.method.brand)|e('html') }}
+								{% endif %}
+							{% elseif 'expires' == column_id %}
+								{{ method.expires|e('html') }}
+							{% elseif 'actions' == column_id %}
+								{% for key,action in method.actions %}
+									<a href="{{ action.url|e('esc_url') }}" class="button {{ fn('sanitize_html_class', key) }}">{{ action.name|e('html') }}</a>&nbsp;
+								{% endfor %}
+							{% endif %}
+						</td>
+					{% endfor %}
+				</tr>
+			{% endfor %}
+		{% endfor %}
+	</table>
+
+{% else %}
+
+	<p class="woocommerce-Message woocommerce-Message--info woocommerce-info">{{ __('No saved methods found.', 'woocommerce')|e('html') }}</p>
+
+{% endif %}
+
+{% do action( 'woocommerce_after_account_payment_methods', has_methods ) %}
+
+{% if payment_gateways.get_available_payment_gateways() %}
+	<a class="button" href="{{ fn('wc_get_endpoint_url', 'add-payment-method')|e('esc_url') }}">{{ __( 'Add payment method', 'woocommerce' )|e('html') }}</a>
+{% endif %}

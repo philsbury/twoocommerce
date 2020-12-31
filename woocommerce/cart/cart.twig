@@ -1,0 +1,150 @@
+{##
+ # Cart Page
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/cart/cart.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce/Templates
+ # @version 3.8.0
+ #}
+
+
+{% do action('woocommerce_before_cart') %}
+<form class="woocommerce-cart-form" action="{{ fn('wc_get_cart_url') }}" method="post">
+	{% do action('woocommerce_before_cart_table') %}
+
+	<table class="shop_table shop_table_responsive cart woocommerce-cart-form__contents" cellspacing="0">
+		<thead>
+			<tr>
+				<th class="product-remove">&nbsp;</th>
+				<th class="product-thumbnail">&nbsp;</th>
+				<th class="product-name">{{ __( 'Product', 'woocommerce' ) }}</th>
+				<th class="product-price">{{ __( 'Price', 'woocommerce' ) }}</th>
+				<th class="product-quantity">{{ __( 'Quantity', 'woocommerce' ) }}</th>
+				<th class="product-subtotal">{{ __( 'Subtotal', 'woocommerce' ) }}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% do action('woocommerce_before_cart_contents') %}
+
+			{% for cart_item_key,cart_item in cart.get_cart() %}
+				{% set _product = cart_item.data|apply_filters('woocommerce_cart_item_product', cart_item, cart_item_key) %}
+				{% set product_id = cart_item.product_id|apply_filters('woocommerce_cart_item_product_id', cart_item, cart_item_key) %}
+
+				{% if _product and _product.exists() and cart_item.quantity > 0 and true|apply_filters('woocommerce_cart_item_visible', cart_item, cart_item_key) %}
+					{% set product_permalink = _product.is_visible() ? _product.get_permalink(cart_item) : '' %}
+					{% set product_permalink = product_permalink|apply_filters('woocommerce_cart_item_permalink', cart_item, cart_item_key) %}
+					<tr class="woocommerce-cart-form__cart-item {{ 'cart_item'|apply_filters('woocommerce_cart_item_class', cart_item, cart_item_key) }}">
+
+						<td class="product-remove">
+              {{ '<a href="%s" class="remove" aria-label="%s" data-product_id="%s" data-product_sku="%s">&times;</a>'|format(
+                fn('wc_get_cart_remove_url', cart_item_key),
+                __('Remove this item', 'woocommerce'),
+								product_id,
+								_product.get_sku()
+              )|apply_filters('woocommerce_cart_item_remove_link', cart_item_key) }}
+						</td>
+
+						<td class="product-thumbnail">
+						{% set thumbnail = _product.get_image()|apply_filters( 'woocommerce_cart_item_thumbnail', cart_item, cart_item_key) %}
+
+						{% if not product_permalink %}
+							{{ thumbnail }}
+						{% else %}
+              {{ '<a href="%s">%s</a>'|format(product_permalink, thumbnail) }}
+						{% endif %}
+
+						</td>
+
+						<td class="product-name" data-title="{{ __( 'Product', 'woocommerce' ) }}">
+						  {% if not product_permalink %}
+							  {{ _product.get_title()|apply_filters('woocommerce_cart_item_name', cart_item, cart_item_key)|e('wp_kses_post') }}
+						  {% else %}
+							  {{ '<a href="%s">%s</a>'|format(product_permalink, _product.get_title())|apply_filters('woocommerce_cart_item_name', cart_item, cart_item_key) }}
+						  {% endif %}
+
+						  {% do action('woocommerce_after_cart_item_name', cart_item, cart_item_key) %}
+
+
+						  {{ fn('wc_get_formatted_cart_item_data', cart_item) }}
+
+
+              {% if _product.backorders_require_notification() and _product.is_on_backorder(cart_item.quantity) %}
+                {{ '<p class="backorder_notification">' ~ __('Available on backorder', 'woocommerce') ~ '</p>'|apply_filters('woocommerce_cart_item_backorder_notification', product_id) }}
+              {% endif %}
+						</td>
+
+						<td class="product-price" data-title="{{ __( 'Price', 'woocommerce' ) }}">
+							{{ cart.get_product_price(_product)|apply_filters( 'woocommerce_cart_item_price', cart_item, cart_item_key) }}
+						</td>
+
+						<td class="product-quantity" data-title="{{ __( 'Quantity', 'woocommerce' ) }}">
+
+						  {% if _product.is_sold_individually() %}
+							  {% set product_quantity = '1 <input type="hidden" name="cart[%s][qty]" value="1" />'|format(cart_item_key) %}
+              {% else %}
+                {% set params = {
+                    'input_name': "cart[" ~ cart_item_key ~ "][qty]",
+                    'input_value': cart_item.quantity,
+                    'max_value': _product.get_max_purchase_quantity(),
+                    'min_value': '0',
+                    'product_name': _product.get_name()
+                } %}
+                {% set product_quantity = fn('woocommerce_quantity_input', params, _product, false) %}
+              {% endif %}
+
+						  {{ product_quantity|apply_filters('woocommerce_cart_item_quantity', cart_item_key, cart_item ) }}
+						</td>
+
+						<td class="product-subtotal" data-title="{{ __( 'Subtotal', 'woocommerce' ) }}">
+							{{ cart.get_product_subtotal(_product, cart_item.quantity)|apply_filters( 'woocommerce_cart_item_subtotal', cart_item, cart_item_key) }}
+						</td>
+					</tr>
+				{% endif %}
+			{% endfor %}
+
+			{% do action('woocommerce_cart_contents') %}
+
+			<tr>
+				<td colspan="6" class="actions">
+
+					{% if fn('wc_coupons_enabled') %}
+						<div class="coupon">
+							<label for="coupon_code">{{ __( 'Coupon:', 'woocommerce' ) }}</label> <input type="text" name="coupon_code" class="input-text" id="coupon_code" value="" placeholder="{{ __( 'Coupon code', 'woocommerce' ) }}" /> <button type="submit" class="button" name="apply_coupon" value="{{ __('Apply coupon', 'woocommerce') }}">{{ __( 'Apply coupon', 'woocommerce' ) }}</button>
+							{% do action('woocommerce_cart_coupon') %}
+						</div>
+					{% endif %}
+
+					<button type="submit" class="button" name="update_cart" value="{{ __('Update cart', 'woocommerce') }}">{{ __('Update cart', 'woocommerce' ) }}</button>
+
+					{% do action( 'woocommerce_cart_actions' ) %}
+
+					{% do fn('wp_nonce_field', 'woocommerce-cart', 'woocommerce-cart-nonce') %}
+				</td>
+			</tr>
+
+			{% do action( 'woocommerce_after_cart_contents' ) %}
+		</tbody>
+	</table>
+	{% do action( 'woocommerce_after_cart_table' ) %}
+</form>
+
+{% do action( 'woocommerce_before_cart_collaterals' ) %}
+
+<div class="cart-collaterals">
+		{##
+		 # Cart collaterals hook.
+		 #
+		 # @hooked woocommerce_cross_sell_display
+		 # @hooked woocommerce_cart_totals - 10
+		 #}
+		{% do action('woocommerce_cart_collaterals') %}
+</div>
+
+{% do action('woocommerce_after_cart') %}

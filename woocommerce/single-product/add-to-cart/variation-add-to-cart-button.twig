@@ -1,0 +1,30 @@
+{##
+ # Single variation cart button
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.4.0
+ #}
+
+<div class="woocommerce-variation-add-to-cart variations_button">
+	{% do action('woocommerce_before_add_to_cart_button') %}
+	{% do action('woocommerce_before_add_to_cart_quantity') %}
+
+	{% set params = {
+    min_value   : product.get_min_purchase_quantity()|apply_filters('woocommerce_quantity_input_min', product),
+    max_value   : product.get_max_purchase_quantity()|apply_filters('woocommerce_quantity_input_max', product),
+    input_value : request.post.quantity ? fn('wc_stock_amount', fn('wp_unslash', request.post.quantity)): product.get_min_purchase_quantity()
+  } %}
+
+  {% do fn('woocommerce_quantity_input', params) %}
+
+	{% do action('woocommerce_after_add_to_cart_quantity') %}
+
+	<button type="submit" class="single_add_to_cart_button button alt">{{ product.single_add_to_cart_text()|e }}</button>
+
+	{% do action( 'woocommerce_after_add_to_cart_button' ) %}
+
+	<input type="hidden" name="add-to-cart" value="{{ product.get_id()|abs }}" />
+	<input type="hidden" name="product_id" value="{{ product.get_id()|abs }}" />
+	<input type="hidden" name="variation_id" class="variation_id" value="0" />
+</div>

@@ -1,0 +1,57 @@
+{##
+ # Checkout Payment Section
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/checkout/payment.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.5.3
+ #}
+
+{% if not fn('is_ajax') %}
+	{% do action( 'woocommerce_review_order_before_payment' ) %}
+{% endif %}
+<div id="payment" class="woocommerce-checkout-payment">
+	{% if cart.needs_payment() %}
+		<ul class="wc_payment_methods payment_methods methods">
+
+			{% if wc.available_gateways %}
+				{% for gateway in wc.available_gateways %}
+					{% do fn('wc_get_template', 'checkout/payment-method.php', { 'gateway': gateway }) %}
+				{% endfor %}
+			{% else %}
+
+				<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">
+          {% set billingMessage = customer.get_billing_country() ? __('Sorry, it seems that there are no available payment methods for your state. Please contact us if you require assistance or wish to make alternate arrangements.', 'woocommerce') : __('Please fill in your details above to see available payment methods.', 'woocommerce') %}
+          {{ billingMessage|apply_filters('woocommerce_no_available_payment_methods_message') }}
+        </li>
+			{% endif %}
+		</ul>
+	{% endif %}
+	<div class="form-row place-order">
+		<noscript>
+			{{ __('Since your browser does not support JavaScript, or it is disabled, please ensure you click the %1$sUpdate Totals%2$s button before placing your order. You may be charged more than the amount stated above if you fail to do so.', 'woocommerce')|format('<em>', '</em>') }}
+			<br/><button type="submit" class="button alt" name="woocommerce_checkout_update_totals" value="{{ __('Update totals', 'woocommerce')|e }}">{{ __('Update totals', 'woocommerce') }}</button>
+		</noscript>
+
+		{% do fn('wc_get_template', 'checkout/terms.php' ) %}
+
+		{% do action('woocommerce_review_order_before_submit') %}
+
+		{% set btn = '<button type="submit" class="button alt" name="woocommerce_checkout_place_order" id="place_order" value="' ~ wc.order_button_text|e ~ '" data-value="' ~ wc.order_button_text|e ~ '">' ~ wc.order_button_text|e ~ '</button>' %}
+		{{ btn|apply_filters('woocommerce_order_button_html') }}
+
+		{% do action('woocommerce_review_order_after_submit') %}
+
+		{% do fn('wp_nonce_field', 'woocommerce-process_checkout', 'woocommerce-process-checkout-nonce' ) %}
+	</div>
+</div>
+{% if not fn('is_ajax') %}
+	{% do action( 'woocommerce_review_order_after_payment' ) %}
+{% endif %}

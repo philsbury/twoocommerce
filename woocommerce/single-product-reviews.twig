@@ -1,0 +1,132 @@
+{##
+ # Display single product reviews (comments)
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/single-product-reviews.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 4.3.0
+ #}
+{% if product.comment_status == 'open' %}
+<div id="reviews" class="woocommerce-Reviews">
+	<div id="comments">
+		<h2 class="woocommerce-Reviews-title">
+			{% set count = product.get_review_count() %}
+			{% if count and fn('wc_review_ratings_enabled') %}
+				{# translators: 1: reviews count 2: product name #}
+				{% set reviews_title = _n( '%1$s review for %2$s', '%1$s reviews for %2$s', count, 'woocommerce')|format(count, '<span>' ~ product.title ~ '</span>') %}
+          {{ reviews_title|apply_filters('woocommerce_reviews_title', count, product ) }}
+			{% else %}
+          {{ __('Reviews', 'woocommerce') }}
+      {% endif %}
+		</h2>
+
+		{% if fn('have_comments') %}
+			<ol class="commentlist">
+				{% do fn('wp_list_comments', {'callback': 'woocommerce_comments'}|apply_filters( 'woocommerce_product_review_list_args')) %}
+			</ol>
+
+
+			{% if fn('get_comment_pages_count') > 1 and fn('get_option', 'page_comments' ) %}
+				<nav class="woocommerce-pagination">
+          {{ fn('paginate_comments_links', {
+            'prev_text' : '&larr;',
+            'next_text' : '&rarr;',
+            'type'      : 'list'
+          }|apply_filters('woocommerce_comment_pagination_args')) }}
+        </nav>
+			{% endif %}
+		{% else %}
+			<p class="woocommerce-noreviews">{{ __('There are no reviews yet.', 'woocommerce') }}</p>
+		{% endif %}
+	</div>
+
+	{% if fn('get_option', 'woocommerce_review_rating_verification_required') == 'no' or fn('wc_customer_bought_product', '', user.id, product.get_id()) %}
+		<div id="review_form_wrapper">
+			<div id="review_form">
+
+				{% set commenter    = fn('wp_get_current_commenter') %}
+					{# translators: %s is product title #}
+					{# translators: %s is product title #}
+				{% set comment_form = {
+					'title_reply'         : fn('have_comments') ? __( 'Add a review', 'woocommerce' ) : __( 'Be the first to review &ldquo;%s&rdquo;', 'woocommerce' )|format(product.title),
+					'title_reply_to'      : __( 'Leave a Reply to %s', 'woocommerce' ),
+					'title_reply_before'  : '<span id="reply-title" class="comment-reply-title">',
+					'title_reply_after'   : '</span>',
+					'comment_notes_after' : '',
+					'label_submit'        : __( 'Submit', 'woocommerce' ),
+					'logged_in_as'        : '',
+					'comment_field'       : '',
+        } %}
+
+				{% set name_email_required = fn('get_option', 'require_name_email', 1)|abs %}
+
+        {% set fields = {
+					'author': {
+            'label'    : __( 'Name', 'woocommerce' ),
+            'type'     : 'text',
+            'value'    : commenter.comment_author,
+            'required' : name_email_required
+          },
+          'email': {
+            'label'    : __( 'Email', 'woocommerce' ),
+            'type'     : 'email',
+            'value'    : commenter.comment_author_email,
+            'required' : name_email_required
+          }
+        } %}
+
+				{% set comment_form_fields = {} %}
+
+				{% for key,field in fields %}
+					{% set field_html = '<p class="comment-form-' ~ key|e('html_attr') ~ '">' %}
+          {% set field_html = field_html ~ '<label for="' ~ key|e('html_attr') ~ '">' ~ field.label %}
+
+					{% if field.required %}
+            {% set field_html = field_html ~ '&nbsp;<span class="required">*</span>' %}
+          {% endif %}
+
+					{% set field_html = field_html ~ '</label><input id="' ~ key|e('html_attr') ~ '" name="'  ~ key|e('html_attr') ~ '" type="'  ~ field.type|e('html_attr') ~ '" value="' ~ field.value|e('html_attr') ~ '" size="30" ' ~ ( field.required ? 'required' : '' ) ~ ' /></p>' %}
+
+					{% set comment_form_fields = comment_form_fields|merge({ (key): field_html }) %}
+				{% endfor %}
+
+        {% set comment_form = comment_form|merge({ fields: comment_form_fields}) %}
+
+				{% set account_page_url = fn('wc_get_page_permalink', 'myaccount') %}
+
+				{% if account_page_url %}
+					{# translators: %s opening and closing link tags respectively #}
+					{% set comment_form = comment_form|merge({ 'must_log_in': '<p class="must-log-in">' ~ __( 'You must be %1$slogged in%2$s to post a review.', 'woocommerce' )|format('<a href="' ~ account_page_url ~ '">', '</a>') ~ '</p>' }) %}
+				{% endif %}
+
+				{% if fn('wc_review_ratings_enabled') %}
+					{% set comment_form = comment_form|merge({ comment_field: '<div class="comment-form-rating"><label for="rating">' ~ __( 'Your rating', 'woocommerce' ) ~ (fn('wc_review_ratings_required') ? '&nbsp;<span class="required">*</span>') ~ '</label><select name="rating" id="rating" required>
+						<option value="">' ~ __( 'Rate&hellip;', 'woocommerce' ) ~ '</option>
+						<option value="5">' ~ __( 'Perfect', 'woocommerce' ) ~ '</option>
+						<option value="4">' ~ __( 'Good', 'woocommerce' ) ~ '</option>
+						<option value="3">' ~ __( 'Average', 'woocommerce' ) ~ '</option>
+						<option value="2">' ~ __( 'Not that bad', 'woocommerce' ) ~ '</option>
+						<option value="1">' ~ __( 'Very poor', 'woocommerce' ) ~ '</option>
+					</select></div>' }) %}
+				{% endif %}
+
+				{% set comment_form = comment_form|merge({comment_field: comment_form.comment_field ~ '<p class="comment-form-comment"><label for="comment">' ~ __( 'Your review', 'woocommerce' ) ~ '&nbsp;<span class="required">*</span></label><textarea id="comment" name="comment" cols="45" rows="8" required></textarea></p>'}) %}
+
+				{% do fn('comment_form', comment_form|apply_filters('woocommerce_product_review_comment_form_args')) %}
+			</div>
+		</div>
+	{% else %}
+
+		<p class="woocommerce-verification-required">{{ __( 'Only logged in customers who have purchased this product may leave a review.', 'woocommerce' ) }}</p>
+	{% endif %}
+
+	<div class="clear"></div>
+</div>
+{% endif %}

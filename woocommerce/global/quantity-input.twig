@@ -1,0 +1,42 @@
+{##
+ # Product quantity inputs
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/global/quantity-input.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 4.0.0
+ #}
+
+{% if wc.max_value and wc.min_value == wc.max_value %}
+	<div class="quantity hidden">
+		<input type="hidden" id="{{ wc.input_id|e('html_attr') }}" class="qty" name="{{ wc.input_name|e('html_attr') }}" value="{{ wc.min_value|e('html_attr') }}" />
+	</div>
+{% else %}
+	{# translators: %s: Quantity. #}
+	{% set label = wc.product_name ? __( '%s quantity', 'woocommerce' )|format(fn('wp_strip_all_tags', wc.product_name))|e : __('Quantity', 'woocommerce')|e %}
+	<div class="quantity">
+		{% do action('woocommerce_before_quantity_input_field') %}
+		<label class="screen-reader-text" for="{{ wc.input_id|e('html_attr') }}">{{ label }}</label>
+		<input
+			type="number"
+			id="{{ wc.input_id|e('html_attr') }}"
+			class="{{ wc.classes|join(' ') }}"
+			step="{{ wc.step|e('html_attr') }}"
+			min="{{ wc.min_value|e('html_attr') }}"
+			max="{{ 0 < wc.max_value ? wc.max_value|e('html_attr') }}"
+			name="{{ wc.input_name|e('html_attr') }}"
+			value="{{ wc.input_value|e('html_attr') }}"
+			title="{{ __( 'Qty', 'Product quantity input tooltip', 'woocommerce' )|e('html_attr') }}"
+			size="4"
+			placeholder="{{ wc.placeholder|e('html_attr') }}"
+			inputmode="{{ wc.inputmode|e('html_attr') }}" />
+		{% do action( 'woocommerce_after_quantity_input_field' ) %}
+	</div>
+{% endif %}

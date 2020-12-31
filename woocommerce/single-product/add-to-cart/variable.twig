@@ -1,0 +1,80 @@
+{##
+ # Variable product add to cart
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/single-product/add-to-cart/variable.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.5.5
+ #}
+
+{% set attribute_keys  = wc.attributes|keys %}
+{% set variations_json = wc.available_variations|json_encode %}
+{% if fn('function_exists', 'wc_esc_json') %}
+  {% set variations_attr = fn('wc_esc_json', variations_json) %}
+{% else %}
+  {% set variations_attr = fn('_wp_specialchars', variations_json, ENT_QUOTES, 'UTF-8', true) %}
+{% endif %}
+
+{% do action('woocommerce_before_add_to_cart_form') %}
+
+<form class="variations_form cart" action="{{ product.get_permalink()|apply_filters('woocommerce_add_to_cart_form_action') }}" method="post" enctype='multipart/form-data' data-product_id="{{ product.get_id() }}" data-product_variations="{{ variations_attr }}">
+	{% do action('woocommerce_before_variations_form') %}
+
+	{% if wc.available_variations is empty and false != available_variations %}
+		<p class="stock out-of-stock">{{ __('This product is currently out of stock and unavailable.', 'woocommerce')|apply_filters( 'woocommerce_out_of_stock_message') }}</p>
+	{% else %}
+		<table class="variations" cellspacing="0">
+			<tbody>
+				{% for attribute_name, options in wc.attributes %}
+					<tr>
+						<td class="label"><label for="{{ attribute_name|slugify|e('html_attr') }}">{{ fn('wc_attribute_label', attribute_name) }}</label></td>
+						<td class="value">
+                {% set params = {
+                  'options'   : options,
+                  'attribute' : attribute_name,
+                  'product'   : product
+                } %}
+
+                {% do fn('wc_dropdown_variation_attribute_options', params) %}
+                {% if loop.last %}
+                {{ fn('wp_kses_post', '<a class="reset_variations" href="#">' ~ __( 'Clear', 'woocommerce' ) ~ '</a>'|apply_filters('woocommerce_reset_variations_link')) }}
+              {% endif %}
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+		<div class="single_variation_wrap">
+				{##
+				 # Hook: woocommerce_before_single_variation.
+				 #}
+				{% do action('woocommerce_before_single_variation') %}
+
+				{##
+				 # Hook: woocommerce_single_variation. Used to output the cart button and placeholder for variation data.
+				 #
+				 # @since 2.4.0
+				 # @hooked woocommerce_single_variation - 10 Empty div for variation data.
+				 # @hooked woocommerce_single_variation_add_to_cart_button - 20 Qty and cart button.
+				 #}
+				{% do action('woocommerce_single_variation') %}
+
+				{##
+				 # Hook: woocommerce_after_single_variation.
+				 #}
+				{% do action('woocommerce_after_single_variation') %}
+		</div>
+	{% endif %}
+
+	{% do action('woocommerce_after_variations_form') %}
+</form>
+
+{% do action('woocommerce_after_add_to_cart_form') %}

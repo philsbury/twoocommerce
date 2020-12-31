@@ -1,0 +1,85 @@
+{##
+ # Mini-cart
+ #
+ # Contains the markup for the mini-cart, used by the cart widget.
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/cart/mini-cart.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.7.0
+ #}
+
+
+{% do action( 'woocommerce_before_mini_cart' ) %}
+
+{% if not cart.is_empty() %}
+
+	<ul class="woocommerce-mini-cart cart_list product_list_widget {{ wc.list_class|e('html_attr') }}">
+		{% do action( 'woocommerce_before_mini_cart_contents' ) %}
+
+		{% for cart_item_key,cart_item in cart.get_cart() %}
+			{% set _product   = cart_item.data|apply_filters( 'woocommerce_cart_item_product', cart_item, cart_item_key) %}
+			{% set product_id = cart_item.product_id|apply_filters( 'woocommerce_cart_item_product_id', cart_item, cart_item_key) %}
+
+			{% if _product and _product.exists() and cart_item.quantity > 0 and true|apply_filters('woocommerce_widget_cart_item_visible', cart_item, cart_item_key) %}
+				{% set product_name       = _product.get_name()|apply_filters('woocommerce_cart_item_name', cart_item, cart_item_key) %}
+				{% set thumbnail          = _product.get_image()|apply_filters('woocommerce_cart_item_thumbnail', cart_item, cart_item_key) %}
+				{% set product_price      = cart.get_product_price(_product)|apply_filters('woocommerce_cart_item_price', cart_item, cart_item_key) %}
+				{% set product_permalink  = (_product.is_visible() ? _product.get_permalink(cart_item) : '')|apply_filters( 'woocommerce_cart_item_permalink', cart_item, cart_item_key) %}
+
+
+        <li class="woocommerce-mini-cart-item {{ 'mini_cart_item'|apply_filters('woocommerce_mini_cart_item_class', cart_item, cart_item_key) }}">
+          {% set link = '<a href="%s" class="remove remove_from_cart_button" aria-label="%s" data-product_id="%s" data-cart_item_key="%s" data-product_sku="%s">&times;</a>'|format(
+							fn('wc_get_cart_remove_url', cart_item_key )|e('esc_url'),
+							__( 'Remove this item', 'woocommerce' ),
+							product_id,
+							cart_item_key,
+							_product.get_sku()
+					) %}
+					{{ link|apply_filters('woocommerce_cart_item_remove_link', cart_item_key) }}
+
+					{% if product_permalink is empty %}
+						{{ thumbnail ~ product_name }}
+					{% else %}
+						<a href="{{ product_permalink|e('esc_url') }}">
+							{{ thumbnail ~ product_name }}
+						</a>
+					{% endif %}
+					{{ fn('wc_get_formatted_cart_item_data', cart_item) }}
+					{{ '<span class="quantity">' ~ '%s &times; %s'|format(cart_item.quantity, product_price ) ~ '</span>'|apply_filters( 'woocommerce_widget_cart_item_quantity', cart_item, cart_item_key ) }}
+				</li>
+      {% endif %}
+		{% endfor %}
+
+		{% do action( 'woocommerce_mini_cart_contents' ) %}
+	</ul>
+
+	<p class="woocommerce-mini-cart__total total">
+		{##
+		 # Hook: woocommerce_widget_shopping_cart_total.
+		 #
+		 # @hooked woocommerce_widget_shopping_cart_subtotal - 10
+		 #}
+		{% do action( 'woocommerce_widget_shopping_cart_total' ) %}
+	</p>
+
+	{% do action( 'woocommerce_widget_shopping_cart_before_buttons' ) %}
+
+	<p class="woocommerce-mini-cart__buttons buttons">{% do action('woocommerce_widget_shopping_cart_buttons') %}</p>
+
+	{% do action( 'woocommerce_widget_shopping_cart_after_buttons' ) %}
+
+{% else %}
+
+	<p class="woocommerce-mini-cart__empty-message">{{ __('No products in the cart.', 'woocommerce') }}</p>
+
+{% endif %}
+
+{% do action( 'woocommerce_after_mini_cart' ) %}

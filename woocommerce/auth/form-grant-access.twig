@@ -1,0 +1,50 @@
+{##
+ # Auth form grant access
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/auth/form-grant-access.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce/Templates/Auth
+ # @version 2.4.0
+ #}
+
+{% do action( 'woocommerce_auth_page_header' ) %}
+
+<h1>
+	{# Translators: %s App name. #}
+	{{ __('%s would like to connect to your store', 'woocommerce')|format(wc.app_name|e) }}
+</h1>
+
+{{ fn('wc_print_notices') }}
+
+<p>
+	{# Translators: %1$s App name, %2$s scope. #}
+	{{ __('This will give "%1$s" %2$s access which will allow it to:', 'woocommerce')|format('<strong>' ~ wc.app_name|e ~ '</strong>', '<strong>' ~ wc.scope|e ~ '</strong>') }}
+</p>
+
+<ul class="wc-auth-permissions">
+	{% for permission in permissions %}
+		<li>{{ permission|e }}</li>
+	{% endfor %}
+</ul>
+
+<div class="wc-auth-logged-in-as">
+	{{ fn('get_avatar', user.id, 70) }}
+	<p>
+		{# Translators: %s display name. #}
+		{{ __('Logged in as %s', 'woocommerce')|format(user.display_name) }}
+		<a href="{{ wc.logout_url }}" class="wc-auth-logout">{{ __('Logout', 'woocommerce') }}</a>
+</div>
+
+<p class="wc-auth-actions">
+	<a href="{{ wc.granted_url }}" class="button button-primary wc-auth-approve">{{ __('Approve', 'woocommerce') }}</a>
+	<a href="{{ wc.return_url }}" class="button wc-auth-deny">{{ __('Deny', 'woocommerce') }}</a>
+</p>
+
+{% do action('woocommerce_auth_page_footer') %}

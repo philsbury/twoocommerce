@@ -1,0 +1,90 @@
+{##
+ # Pay for order form
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/checkout/form-pay.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 3.4.0
+ #}
+
+
+{% set totals = wc.order.get_order_item_totals() %}
+<form id="order_review" method="post">
+
+	<table class="shop_table">
+		<thead>
+			<tr>
+				<th class="product-name">{{ __('Product', 'woocommerce') }}</th>
+				<th class="product-quantity">{{ __('Qty', 'woocommerce') }}</th>
+				<th class="product-total">{{ __('Totals', 'woocommerce') }}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% if wc.order.get_items()|length > 0 %}
+				{% for item_id,item in wc.order.get_items() %}
+
+					{% if true|apply_filters('woocommerce_order_item_visible', item) %}
+					<tr class="{{ 'order_item'|apply_filters( 'woocommerce_order_item_class', item, wc.order)|e('html_attr') }}">
+						<td class="product-name">
+								{{ item.get_name()|apply_filters( 'woocommerce_order_item_name', item, false )|e }}
+
+								{% do action('woocommerce_order_item_meta_start', item_id, item, wc.order, false ) %}
+
+								{% do fn('wc_display_item_meta', item ) %}
+
+								{% do action('woocommerce_order_item_meta_end', item_id, item, wc.order, false ) %}
+						</td>
+						<td class="product-quantity">{{ ' <strong class="product-quantity">' ~ '&times;&nbsp;%s'|format(item.get_quantity()) ~ '</strong>'|apply_filters( 'woocommerce_order_item_quantity_html', item ) }}</td>
+						<td class="product-subtotal">{{ wc.order.get_formatted_line_subtotal(item) }}</td>
+					</tr>
+          {% endif %}
+				{% endfor %}
+			{% endif %}
+		</tbody>
+		<tfoot>
+			{% if totals %}
+				{% for total in totals %}
+					<tr>
+						<th scope="row" colspan="2">{{ total.label }}</th>
+						<td class="product-total">{{ total.value }}</td>
+					</tr>
+				{% endfor %}
+			{% endif %}
+		</tfoot>
+	</table>
+
+	<div id="payment">
+		{% if wc.order.needs_payment() %}
+			<ul class="wc_payment_methods payment_methods methods">
+
+				{% if wc.available_gateways %}
+					{% for gateway in wc.available_gateways %}
+						{% do fn('wc_get_template', 'checkout/payment-method.php', {'gateway': gateway} ) %}
+					{% endfor %}
+				{% else %}
+					<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">{{ __( 'Sorry, it seems that there are no available payment methods for your location. Please contact us if you require assistance or wish to make alternate arrangements.', 'woocommerce' )|apply_filters('woocommerce_no_available_payment_methods_message') }}</li>
+				{% endif %}
+			</ul>
+		{% endif %}
+		<div class="form-row">
+			<input type="hidden" name="woocommerce_pay" value="1" />
+
+			{% do fn('wc_get_template', 'checkout/terms.php') %}
+
+			{% do action( 'woocommerce_pay_order_before_submit' ) %}
+
+			{{ '<button type="submit" class="button alt" id="place_order" value="' ~ wc.order_button_text|e('html_attr') ~ '" data-value="' ~ wc.order_button_text|e('html_attr') ~ '">' ~ wc.order_button_text ~ '</button>'|apply_filters('woocommerce_pay_order_button_html') }}
+
+			{% do action( 'woocommerce_pay_order_after_submit' ) %}
+
+			{% do fn('wp_nonce_field', 'woocommerce-pay', 'woocommerce-pay-nonce' ) %}
+		</div>
+	</div>
+</form>

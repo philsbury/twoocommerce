@@ -1,0 +1,85 @@
+{##
+ # Shipping Calculator
+ #
+ # This template can be overridden by copying it to yourtheme/woocommerce/cart/shipping-calculator.php.
+ #
+ # HOWEVER, on occasion WooCommerce will need to update template files and you
+ # (the theme developer) will need to copy the new files to your theme to
+ # maintain compatibility. We try to do this as little as possible, but it does
+ # happen. When this occurs the version of the template file will be bumped and
+ # the readme will list any important changes.
+ #
+ # @see     https://docs.woocommerce.com/document/template-structure/
+ # @package WooCommerce\Templates
+ # @version 4.0.0
+ #}
+
+{% do action('woocommerce_before_shipping_calculator') %}
+
+<form class="woocommerce-shipping-calculator" action="{{ fn('wc_get_cart_url') }}" method="post">
+  {% set btnText = wc.button_text ? wc.button_text : __( 'Calculate shipping', 'woocommerce' ) %}
+	{{ '<a href="#" class="shipping-calculator-button">%s</a>'|format(btnText) }}
+
+	<section class="shipping-calculator-form" style="display:none;">
+
+		{% if true|apply_filters('woocommerce_shipping_calculator_enable_country') %}
+			<p class="form-row form-row-wide" id="calc_shipping_country_field">
+				<select name="calc_shipping_country" id="calc_shipping_country" class="country_to_state country_select" rel="calc_shipping_state">
+					<option value="default">{{ __('Select a country / region&hellip;', 'woocommerce') }}</option>
+
+					{% for key,value in countries.get_shipping_countries() %}
+						<option value="{{ key }}" {{ fn('selected', customer.get_shipping_country(), key, false) }}>{{ value }}</option>
+					{% endfor %}
+
+				</select>
+			</p>
+		{% endif %}
+
+		{% if true|apply_filters('woocommerce_shipping_calculator_enable_state') %}
+			<p class="form-row form-row-wide" id="calc_shipping_state_field">
+
+				{% set current_cc = customer.get_shipping_country() %}
+				{% set current_r  = customer.get_shipping_state() %}
+				{% set states     = countries.get_states(current_cc) %}
+
+				{% if states is iterable and states is empty %}
+
+					<input type="hidden" name="calc_shipping_state" id="calc_shipping_state" placeholder="{{ __( 'State / County', 'woocommerce' ) }}" />
+
+				{% elseif states is iterable %}
+					<span>
+						<select name="calc_shipping_state" class="state_select" id="calc_shipping_state" data-placeholder="{{ __('State / County', 'woocommerce') }}">
+							<option value="">{{ __('Select an option&hellip;', 'woocommerce' ) }}</option>
+
+							{% for ckey,cvalue in states %}
+								<option value="{{ ckey }}" {{ fn('selected', current_r, ckey, false) }}>{{cvalue}}</option>
+							{% endfor %}
+
+						</select>
+					</span>
+
+				{% else %}
+					<input type="text" class="input-text" value="{{ current_r }}" placeholder="{{ __('State / County', 'woocommerce') }}" name="calc_shipping_state" id="calc_shipping_state" />
+
+				{% endif %}
+			</p>
+		{% endif %}
+
+		{% if true|apply_filters( 'woocommerce_shipping_calculator_enable_city') %}
+			<p class="form-row form-row-wide" id="calc_shipping_city_field">
+				<input type="text" class="input-text" value="{{ customer.get_shipping_city() }}" placeholder="{{ __('City', 'woocommerce') }}" name="calc_shipping_city" id="calc_shipping_city" />
+			</p>
+		{% endif %}
+
+		{% if true|apply_filters('woocommerce_shipping_calculator_enable_postcode') %}
+			<p class="form-row form-row-wide" id="calc_shipping_postcode_field">
+				<input type="text" class="input-text" value="{{ customer.get_shipping_postcode() }}" placeholder="{{ __( 'Postcode / ZIP', 'woocommerce' ) }}" name="calc_shipping_postcode" id="calc_shipping_postcode" />
+			</p>
+		{% endif %}
+
+		<p><button type="submit" name="calc_shipping" value="1" class="button">{{ __( 'Update', 'woocommerce' ) }}</button></p>
+		{% do fn('wp_nonce_field', 'woocommerce-shipping-calculator', 'woocommerce-shipping-calculator-nonce') %}
+	</section>
+</form>
+
+{% do action('woocommerce_after_shipping_calculator') %}
